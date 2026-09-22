@@ -16,9 +16,10 @@ class LocalWhisperEngine(private val context: Context) : TranscriptionEngine {
         if (!NativeInference.isAvailable()) { Log.e(TAG, "Native inference library is unavailable"); return "" }
         val wav = File(pcm16File.parentFile, "last-recording.wav")
         PcmAudio.toWav(pcm16File, wav)
+        val model = models.whisperModelFor(pcm16File)
         val language = context.getSharedPreferences("settings", Context.MODE_PRIVATE).getString("input_language", "auto") ?: "auto"
-        Log.i(TAG, "Starting native Whisper: wav=${wav.length()} model=${models.whisperModel.length()} language=$language")
-        return runCatching { NativeInference.transcribe(models.whisperModel, wav, language) }
+        Log.i(TAG, "Starting native Whisper: wav=${wav.length()} model=${model.name} language=$language")
+        return runCatching { NativeInference.transcribe(model, wav, language) }
             .also { Log.i(TAG, "Native Whisper returned length=${it.getOrDefault("").length}") }
             .onFailure { Log.e(TAG, "Whisper transcription failed", it) }
             .getOrDefault("")
