@@ -12,6 +12,9 @@ class VoiceService : Service() {
     private val speaker by lazy { ResponseSpeaker(this) }
     private val history by lazy { ConversationStore(this) }
     private val confirmations = ConfirmationManager()
+    private val planner = AgentPlanner()
+    private val memory by lazy { MemoryStore(this) }
+    private val skills by lazy { SkillStore(this) }
     private var wakeEngine: WakeWordEngine? = null
     private var recorder: AudioRecorder? = null
     private val receiver = object : BroadcastReceiver() {
@@ -105,6 +108,30 @@ class VoiceService : Service() {
                 speaker.speak(response)
                 return IntentResult.Dictation(response)
             }
+        }
+        val remember = Regex("ingat(?:i)?\\s+(.+?)\\s+(?:adalah|itu)\\s+(.+)", RegexOption.IGNORE_CASE).find(text)
+        if (remember != null) {
+            memory.remember(remember.groupValues[1], remember.groupValues[2])
+            val response = "Baik, saya ingat ${remember.groupValues[1]}."
+            history.add(text, response); speaker.speak(response)
+            return IntentResult.Dictation(response)
+        }
+        val recall = Regex("(?:siapa|apa)\\s+(?:nama|nilai)\\s+(.+?)\\??$", RegexOption.IGNORE_CASE).find(text)
+        if (recall != null) {
+            val response = memory.recall(recall.groupValues[1]) ?: "Saya belum memiliki informasi itu."
+            history.add(text, response); speaker.speak(response)
+            return IntentResult.Dictation(response)
+        }
+        skills.find(text)?.let { skill ->
+            val response = "Menjalankan skill ${skill.name}."
+            history.add(text, response); speaker.speak(response)
+            return IntentResult.Dictation(response)
+        }
+        val plan = planner.plan(text)
+        if (plan.size > 1) {
+            val response = "Saya menyiapkan ${plan.size} langkah untuk perintah ini."
+            history.add(text, response); speaker.speak(response)
+            return IntentResult.Dictation(response)
         }
         val uiCommand = UiCommandParser.parse(text)
         if (uiCommand != null) {

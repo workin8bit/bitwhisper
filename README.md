@@ -13,6 +13,7 @@ Asisten suara Android offline bergaya JARVIS.
 - Riwayat percakapan lokal dan pilihan output Text/Voice/Text + Voice
 - Variasi perintah awal Bahasa Jawa (Jawa/ngoko) dan pilihan bahasa input otomatis, Indonesia, atau Jawa
 - Dua mode chatbot: Umum dan Scientific
+- Fondasi agent planner, memory store, dan local skills sebelum integrasi chatbot Qwen
 - Kerangka wake word "Hey BitWhisper" dengan Volume Up sebagai fallback; engine keyword offline masih perlu dipasang
 - Trigger Volume Up dan pipeline Whisper masih dalam tahap implementasi dan harus diuji pada Infinix/XOS
 
