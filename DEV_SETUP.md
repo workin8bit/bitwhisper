@@ -48,3 +48,7 @@ app/build/outputs/apk/debug/app-debug.apk
 ```
 
 Whisper.cpp, llama.cpp, dan model GGUF masih perlu ditambahkan sebelum inference offline nyata aktif.
+
+## PixelOperator font
+
+Place `PixelOperator.ttf` as `app/src/main/res/font/pixeloperator.ttf` before using it from resources. The font can be obtained from https://www.dafont.com/pixel-operator.font; verify its license before redistribution.
