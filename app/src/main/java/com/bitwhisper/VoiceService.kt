@@ -40,6 +40,8 @@ class VoiceService : Service() {
             @Suppress("DEPRECATION") registerReceiver(receiver, filter)
         }
         startForeground(1, notification())
+        // Let TTS finish initializing, then confirm that voice input is ready.
+        android.os.Handler(mainLooper).postDelayed({ speaker.announceReady() }, 700L)
         startWakeWordIfEnabled()
     }
 
