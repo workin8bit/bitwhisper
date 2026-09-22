@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -56,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         layout.addView(button("Muat ulang riwayat") { historyText.text = historyText() })
         layout.addView(button("Hapus riwayat") { ConversationStore(this).clear(); historyText.text = "Belum ada percakapan." })
         historyText.text = historyText()
-        setContentView(layout)
+        setContentView(ScrollView(this).apply { addView(layout) })
     }
 
     private fun historyText(): String {
