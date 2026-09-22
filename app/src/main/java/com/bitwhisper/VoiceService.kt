@@ -65,6 +65,9 @@ class VoiceService : Service() {
         recorder = null
         active.stop()
         Thread {
+            // Give the short post-recording inference enough CPU priority to minimize
+            // the gap between releasing Volume Up and inserting the text.
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND)
             val pcm = File(cacheDir, "last-recording.pcm")
             val transcript = transcriber.transcribe(pcm).trim()
             Log.d("BitWhisperVoice", "Transcription length=${transcript.length}")
