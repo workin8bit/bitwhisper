@@ -3,6 +3,7 @@ package com.bitwhisper
 import android.app.*
 import android.content.*
 import android.os.IBinder
+import android.util.Log
 import java.io.File
 
 class VoiceService : Service() {
@@ -66,6 +67,7 @@ class VoiceService : Service() {
         Thread {
             val pcm = File(cacheDir, "last-recording.pcm")
             val transcript = transcriber.transcribe(pcm).trim()
+            Log.d("BitWhisperVoice", "Transcription length=${transcript.length}")
             if (transcript.isNotEmpty()) {
                 onTranscript(transcript)
             }
