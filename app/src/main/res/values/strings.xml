@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">BitWhisper</string>
+    <string name="accessibility_description">Insert BitWhisper dictation and detect Volume Up</string>
+</resources>
