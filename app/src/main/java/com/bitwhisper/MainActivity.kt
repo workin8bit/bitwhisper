@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         layout.addView(button("Umum") { ChatSettings(this).setMode(ChatMode.GENERAL) })
         layout.addView(button("Scientific") { ChatSettings(this).setMode(ChatMode.SCIENTIFIC) })
         layout.addView(TextView(this).apply { text = "Wake word"; textSize = 18f; setPadding(0, 20, 0, 8) })
-        val wakeWordInput = EditText(this).apply { hint = "Contoh: Hey BitWhisper"; setText(getSharedPreferences("settings", MODE_PRIVATE).getString("wake_word", "Hey BitWhisper")) }
+        val wakeWordInput = EditText(this).apply { hint = "Contoh: kyu kyu"; setText(getSharedPreferences("settings", MODE_PRIVATE).getString("wake_word", "kyu kyu")) }
         layout.addView(wakeWordInput)
         layout.addView(button("Simpan wake word") { saveWakeWord(wakeWordInput.text.toString()) })
         layout.addView(button("Aktifkan wake word") { setWakeWordEnabled(true) })
