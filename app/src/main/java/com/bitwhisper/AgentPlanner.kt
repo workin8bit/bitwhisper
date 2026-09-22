@@ -8,7 +8,7 @@ sealed interface PlannedStep {
 
 class AgentPlanner {
     fun plan(input: String): List<PlannedStep> {
-        val parts = input.split(Regex("\\s+(?:lalu|kemudian|terus)\\s+"), ignoreCase = true)
+        val parts = input.split(Regex("\\s+(?:lalu|kemudian|terus)\\s+", RegexOption.IGNORE_CASE))
         return parts.flatMap { sentence ->
             val lower = sentence.lowercase().trim()
             when {

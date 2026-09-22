@@ -17,7 +17,7 @@ class ModelDownloader(context: Context) {
                 val temp = File(target.parentFile, target.name + ".part")
                 var offset = if (temp.exists()) temp.length() else 0L
                 var connection = open(url, offset)
-                if (offset > 0 && connection.responseCode == HttpURLConnection.HTTP_REQUESTED_RANGE_NOT_SATISFIABLE) {
+                if (offset > 0 && connection.responseCode == 416) {
                     connection.disconnect(); temp.delete(); offset = 0; connection = open(url, 0)
                 }
                 if (connection.responseCode !in 200..299) error("HTTP ${connection.responseCode}")
