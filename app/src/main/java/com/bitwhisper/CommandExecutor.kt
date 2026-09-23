@@ -25,6 +25,10 @@ class CommandExecutor(private val context: Context) {
 
     private fun resolvePackage(query: String): String? {
         val normalized = query.trim().lowercase()
+            .replace(Regex("[.!?,]"), "")
+            .replace("wa sap", "whatsapp")
+            .replace("wasap", "whatsapp")
+            .replace("watsap", "whatsapp")
         val aliases = mapOf(
             "whatsapp" to "com.whatsapp",
             "telegram" to "org.telegram.messenger",
