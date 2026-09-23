@@ -23,6 +23,10 @@ class VoiceService : Service() {
             when (intent.action) {
                 BitWhisperAccessibilityService.ACTION_RECORD_START -> startRecording()
                 BitWhisperAccessibilityService.ACTION_RECORD_STOP -> stopRecording()
+                BitWhisperNotificationListener.ACTION_INCOMING_CALL -> {
+                    val label = intent.getStringExtra("label").orEmpty()
+                    speaker.speak("Ada panggilan masuk${if (label.isNotBlank()) ": $label" else ""}. Bilang angkat atau tolak.")
+                }
             }
         }
     }
@@ -33,6 +37,7 @@ class VoiceService : Service() {
         val filter = IntentFilter().apply {
             addAction(BitWhisperAccessibilityService.ACTION_RECORD_START)
             addAction(BitWhisperAccessibilityService.ACTION_RECORD_STOP)
+            addAction(BitWhisperNotificationListener.ACTION_INCOMING_CALL)
         }
         if (android.os.Build.VERSION.SDK_INT >= 33) {
             registerReceiver(receiver, filter, RECEIVER_NOT_EXPORTED)

@@ -18,10 +18,19 @@ class BitWhisperNotificationListener : NotificationListenerService() {
                 .putBoolean("incoming_call", isCall)
                 .putString("caller_label", value)
                 .apply()
+            if (isCall) {
+                val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
+                val previous = prefs.getString("announced_call", null)
+                if (previous != value) {
+                    prefs.edit().putString("announced_call", value).apply()
+                    sendBroadcast(android.content.Intent(ACTION_INCOMING_CALL).setPackage(packageName).putExtra("label", value))
+                }
+            }
         }
     }
 
     companion object {
         const val PREFS = "notification_memory"
+        const val ACTION_INCOMING_CALL = "com.bitwhisper.INCOMING_CALL"
     }
 }
