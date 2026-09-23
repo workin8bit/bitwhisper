@@ -97,6 +97,19 @@ class VoiceService : Service() {
     /** Entry point shared by Whisper and tests. */
     fun onTranscript(text: String): IntentResult {
         val normalized = text.trim().lowercase()
+        val settingsSearch = Regex("buka (?:pengaturan|settings)[, ]+cari (.+)", RegexOption.IGNORE_CASE).find(text.trim())
+        if (settingsSearch != null) {
+            val query = settingsSearch.groupValues[1].trim()
+            startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+            android.os.Handler(mainLooper).postDelayed({
+                val service = BitWhisperAccessibilityService.active
+                val executor = service?.let { UiActionExecutor(it) }
+                val openedSearch = executor?.click("Cari") == true || executor?.click("Search") == true
+                if (openedSearch) android.os.Handler(mainLooper).postDelayed({ executor.setText("", query) }, 350L)
+                speaker.speak(if (openedSearch) "Oke, aku cari $query di pengaturan." else "Aku sudah buka pengaturan, tapi tombol carinya belum ketemu.")
+            }, 900L)
+            return IntentResult.Dictation("Mencari $query")
+        }
         confirmations.pending()?.let { pending ->
             if (normalized in setOf("ya", "iya", "lanjut", "kirim", "confirm")) {
                 confirmations.confirm()
