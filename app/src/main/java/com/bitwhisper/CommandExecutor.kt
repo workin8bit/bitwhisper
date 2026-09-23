@@ -44,9 +44,10 @@ class CommandExecutor(private val context: Context) {
             "youtube" to "com.google.android.youtube",
             "chrome" to "com.android.chrome"
         )
-        aliases[normalized]?.let { alias ->
-            if (runCatching { context.packageManager.getPackageInfo(alias, 0) }.isSuccess) return alias
-        }
+        // Known package aliases are safe to return directly. Android package
+        // visibility can hide installed apps from getPackageInfo on newer/XOS
+        // builds even though an explicit launch is allowed.
+        aliases[normalized]?.let { return it }
         val apps = context.packageManager.getInstalledApplications(0)
             .filter { context.packageManager.getLaunchIntentForPackage(it.packageName) != null }
         apps.firstOrNull {
