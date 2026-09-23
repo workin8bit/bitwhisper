@@ -41,9 +41,36 @@ class CommandExecutor(private val context: Context) {
             "chrome" to "com.android.chrome"
         )
         aliases[normalized]?.let { if (context.packageManager.getLaunchIntentForPackage(it) != null) return it }
-        return context.packageManager.getInstalledApplications(0).firstOrNull {
+        val apps = context.packageManager.getInstalledApplications(0)
+            .filter { context.packageManager.getLaunchIntentForPackage(it.packageName) != null }
+        apps.firstOrNull {
             context.packageManager.getApplicationLabel(it).toString().lowercase().contains(normalized)
-        }?.packageName
+        }?.packageName?.let { return it }
+
+        // Whisper can produce small spelling/phonetic errors. Use a conservative
+        // edit-distance fallback for any installed launchable app, but do not
+        // guess when the name is too different.
+        val best = apps.map {
+            val label = context.packageManager.getApplicationLabel(it).toString().lowercase()
+            it to editDistance(normalized, label)
+        }.minByOrNull { it.second }
+        val maxDistance = maxOf(2, normalized.length / 3)
+        return best?.takeIf { it.second <= maxDistance }?.first?.packageName
+    }
+
+    private fun editDistance(a: String, b: String): Int {
+        val previous = IntArray(b.length + 1) { it }
+        for (i in a.indices) {
+            val current = IntArray(b.length + 1)
+            current[0] = i + 1
+            for (j in b.indices) current[j + 1] = minOf(
+                current[j] + 1,
+                previous[j + 1] + 1,
+                previous[j] + if (a[i] == b[j]) 0 else 1
+            )
+            for (j in previous.indices) previous[j] = current[j]
+        }
+        return previous[b.length]
     }
 
     fun execute(result: IntentResult): String = when (result) {
