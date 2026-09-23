@@ -40,7 +40,9 @@ class CommandExecutor(private val context: Context) {
             "youtube" to "com.google.android.youtube",
             "chrome" to "com.android.chrome"
         )
-        aliases[normalized]?.let { if (context.packageManager.getLaunchIntentForPackage(it) != null) return it }
+        aliases[normalized]?.let { alias ->
+            if (runCatching { context.packageManager.getPackageInfo(alias, 0) }.isSuccess) return alias
+        }
         val apps = context.packageManager.getInstalledApplications(0)
             .filter { context.packageManager.getLaunchIntentForPackage(it.packageName) != null }
         apps.firstOrNull {
@@ -85,7 +87,12 @@ class CommandExecutor(private val context: Context) {
                 "Oke, aku buka pengaturan."
             } else {
                 val packageName = resolvePackage(result.name)
-                val launch = packageName?.let { context.packageManager.getLaunchIntentForPackage(it) }
+                var launch = packageName?.let { context.packageManager.getLaunchIntentForPackage(it) }
+                // Some XOS builds hide launcher intents from getLaunchIntentForPackage.
+                // Resolve the explicit launcher activity as a fallback.
+                if (launch == null && packageName == "com.whatsapp") {
+                    launch = Intent().setComponent(android.content.ComponentName("com.whatsapp", "com.whatsapp.Main"))
+                }
                 if (launch != null) { context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); "Oke, aku buka ${result.name}." }
                 else "Aku nggak menemukan aplikasi ${result.name}."
             }
