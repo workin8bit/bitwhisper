@@ -15,7 +15,7 @@ class CommandRouter {
             text in setOf("tolak panggilan", "tolak", "tutup panggilan") -> IntentResult.CallControl("reject")
             text in setOf("nyalakan loudspeaker", "aktifkan speaker", "pakai speaker") -> IntentResult.CallControl("speaker_on")
             text in setOf("matikan loudspeaker", "matikan speaker", "kembali ke earpiece") -> IntentResult.CallControl("speaker_off")
-            text.startsWith("buka ") || text.startsWith("bukak ") -> IntentResult.OpenApp(input.substringAfter(' ').trim())
+            text.startsWith("buka ") || text.startsWith("bukak ") -> IntentResult.OpenApp(text.substringAfter(' ').trim())
             text.startsWith("buat catatan ") || text.startsWith("gawe cathetan ") -> IntentResult.CreateNote(input.substringAfter(' ').trim())
             text.startsWith("setel timer ") || text.startsWith("pasang timer ") || text.startsWith("gawe timer ") -> IntentResult.Timer(input.substringAfterLast(' ').toIntOrNull() ?: 0)
             text == "nyalakan senter" || text == "uripna senter" || text == "matikan senter" || text == "pateni senter" -> IntentResult.Flashlight(text.startsWith("nyalakan") || text.startsWith("uripna"))
@@ -28,10 +28,16 @@ class CommandRouter {
         val replacements = mapOf(
             "puka " to "buka ",
             "bukka " to "buka ",
+            "lets up" to "whatsapp",
+            "let s up" to "whatsapp",
+            "let sup" to "whatsapp",
             "bukak " to "buka ",
             "tulis " to "ketik "
         )
         replacements.forEach { (wrong, right) -> if (text.startsWith(wrong)) text = right + text.removePrefix(wrong) }
+        text = text.replace("lets up", "whatsapp")
+            .replace("let s up", "whatsapp")
+            .replace("let sup", "whatsapp")
         return text
     }
 }
