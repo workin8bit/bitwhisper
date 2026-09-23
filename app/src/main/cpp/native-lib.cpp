@@ -20,7 +20,8 @@ static bool read_wav_pcm16(const char * path, std::vector<float> & out) {
     char header[44]; file.read(header, 44);
     if (file.gcount() != 44 || header[0] != 'R' || header[1] != 'I' || header[2] != 'F' || header[8] != 'W') return false;
     file.seekg(0, std::ios::end);
-    const std::streamoff bytes = file.tellg() - 44;
+    const std::streamoff end = static_cast<std::streamoff>(file.tellg());
+    const std::streamoff bytes = end - static_cast<std::streamoff>(44);
     if (bytes <= 0 || (bytes % 2) != 0) return false;
     out.resize(static_cast<size_t>(bytes / 2));
     file.seekg(44);
