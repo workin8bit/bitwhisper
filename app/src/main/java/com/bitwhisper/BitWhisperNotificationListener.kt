@@ -10,8 +10,13 @@ class BitWhisperNotificationListener : NotificationListenerService() {
         val title = extras.getCharSequence("android.title")?.toString().orEmpty()
         val text = extras.getCharSequence("android.text")?.toString().orEmpty()
         if (title.isNotBlank() || text.isNotBlank()) {
+            val value = listOf(title, text).filter { it.isNotBlank() }.joinToString(": ")
+            val isCall = sbn.notification.category == android.app.Notification.CATEGORY_CALL ||
+                value.contains("panggilan", true) || value.contains("incoming call", true)
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putString("last_notification", listOf(title, text).filter { it.isNotBlank() }.joinToString(": "))
+                .putString("last_notification", value)
+                .putBoolean("incoming_call", isCall)
+                .putString("caller_label", value)
                 .apply()
         }
     }

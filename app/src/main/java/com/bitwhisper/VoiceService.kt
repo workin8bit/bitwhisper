@@ -116,11 +116,13 @@ class VoiceService : Service() {
                 return IntentResult.Dictation(response)
             }
         }
-        if (normalized == "baca layar" || normalized == "baca pesan" || normalized == "baca pesan terakhir") {
+        if (normalized == "siapa yang menelepon" || normalized == "ada panggilan" || normalized == "baca layar" || normalized == "baca pesan" || normalized == "baca pesan terakhir") {
             val service = BitWhisperAccessibilityService.active
             val screenText = service?.let { ScreenReader(it).dump().trim() }.orEmpty()
             val notification = getSharedPreferences(BitWhisperNotificationListener.PREFS, MODE_PRIVATE).getString("last_notification", "").orEmpty()
             val response = when {
+                normalized == "siapa yang menelepon" || normalized == "ada panggilan" ->
+                    if (notification.isNotBlank()) notification else "Aku belum melihat panggilan masuk."
                 screenText.isNotBlank() -> screenText.lines().takeLast(12).joinToString(" ")
                 notification.isNotBlank() -> notification
                 else -> "Aku belum bisa melihat pesan atau teks sekarang."
