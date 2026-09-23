@@ -23,6 +23,20 @@ class CommandExecutor(private val context: Context) {
         } else "Aku belum menemukan tombol panggilan itu."
     }
 
+    private fun resolvePackage(query: String): String? {
+        val normalized = query.trim().lowercase()
+        val aliases = mapOf(
+            "whatsapp" to "com.whatsapp",
+            "telegram" to "org.telegram.messenger",
+            "youtube" to "com.google.android.youtube",
+            "chrome" to "com.android.chrome"
+        )
+        aliases[normalized]?.let { if (context.packageManager.getLaunchIntentForPackage(it) != null) return it }
+        return context.packageManager.getInstalledApplications(0).firstOrNull {
+            context.packageManager.getApplicationLabel(it).toString().lowercase().contains(normalized)
+        }?.packageName
+    }
+
     fun execute(result: IntentResult): String = when (result) {
         is IntentResult.Dictation -> result.text
         is IntentResult.CallControl -> controlCall(result.action)
@@ -34,7 +48,8 @@ class CommandExecutor(private val context: Context) {
                 context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 "Oke, aku buka pengaturan."
             } else {
-                val launch = context.packageManager.getLaunchIntentForPackage(result.name)
+                val packageName = resolvePackage(result.name)
+                val launch = packageName?.let { context.packageManager.getLaunchIntentForPackage(it) }
                 if (launch != null) { context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); "Oke, aku buka ${result.name}." }
                 else "Aku nggak menemukan aplikasi ${result.name}."
             }
