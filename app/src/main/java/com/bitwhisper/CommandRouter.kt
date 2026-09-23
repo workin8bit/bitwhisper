@@ -5,6 +5,7 @@ class CommandRouter {
     fun route(input: String): IntentResult {
         val text = input.trim().lowercase()
         return when {
+            text == "buka pengaturan" || text == "buka settings" -> IntentResult.OpenApp("__settings__")
             text.startsWith("buka ") || text.startsWith("bukak ") -> IntentResult.OpenApp(input.substringAfter(' ').trim())
             text.startsWith("buat catatan ") || text.startsWith("gawe cathetan ") -> IntentResult.CreateNote(input.substringAfter(' ').trim())
             text.startsWith("setel timer ") || text.startsWith("pasang timer ") || text.startsWith("gawe timer ") -> IntentResult.Timer(input.substringAfterLast(' ').toIntOrNull() ?: 0)

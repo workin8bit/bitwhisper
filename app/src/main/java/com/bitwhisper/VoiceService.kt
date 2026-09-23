@@ -116,6 +116,14 @@ class VoiceService : Service() {
                 return IntentResult.Dictation(response)
             }
         }
+        if (normalized == "baca layar" || normalized == "baca pesan" || normalized == "baca pesan terakhir") {
+            val service = BitWhisperAccessibilityService.active
+            val screenText = service?.let { ScreenReader(it).dump().trim() }.orEmpty()
+            val response = if (screenText.isBlank()) "Aku belum bisa melihat teks di layar sekarang." else screenText.lines().takeLast(12).joinToString(" ")
+            history.add(text, response)
+            speaker.speak(response)
+            return IntentResult.Dictation(response)
+        }
         val remember = Regex("ingat(?:i)?\\s+(.+?)\\s+(?:adalah|itu)\\s+(.+)", RegexOption.IGNORE_CASE).find(text)
         if (remember != null) {
             memory.remember(remember.groupValues[1], remember.groupValues[2])

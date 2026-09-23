@@ -11,9 +11,14 @@ class CommandExecutor(private val context: Context) {
         is IntentResult.Timer -> "Timer ${result.minutes} menit disiapkan"
         is IntentResult.Flashlight -> "Kontrol flashlight akan dijalankan"
         is IntentResult.OpenApp -> {
-            val launch = context.packageManager.getLaunchIntentForPackage(result.name)
-            if (launch != null) { context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); "Membuka ${result.name}" }
-            else "Aplikasi ${result.name} tidak ditemukan"
+            if (result.name == "__settings__") {
+                context.startActivity(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                "Oke, aku buka pengaturan."
+            } else {
+                val launch = context.packageManager.getLaunchIntentForPackage(result.name)
+                if (launch != null) { context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); "Oke, aku buka ${result.name}." }
+                else "Aku nggak menemukan aplikasi ${result.name}."
+            }
         }
     }
 }
