@@ -5,6 +5,7 @@ import android.content.*
 import android.os.IBinder
 import android.util.Log
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 
 class VoiceService : Service() {
     private val commandRouter = CommandRouter()
@@ -18,6 +19,7 @@ class VoiceService : Service() {
     private val skills by lazy { SkillStore(this) }
     private var wakeEngine: WakeWordEngine? = null
     private var recorder: AudioRecorder? = null
+    private val transcriptionBusy = AtomicBoolean(false)
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
@@ -71,15 +73,23 @@ class VoiceService : Service() {
         val active = recorder ?: return
         recorder = null
         active.stop()
+        if (!transcriptionBusy.compareAndSet(false, true)) {
+            Log.w("BitWhisperVoice", "Transcription already running; ignoring overlapping recording")
+            return
+        }
         Thread {
             // Give the short post-recording inference enough CPU priority to minimize
             // the gap between releasing Volume Up and inserting the text.
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND)
-            val pcm = File(cacheDir, "last-recording.pcm")
-            val transcript = transcriber.transcribe(pcm).trim()
-            Log.d("BitWhisperVoice", "Transcription length=${transcript.length}")
-            if (transcript.isNotEmpty()) {
-                onTranscript(transcript)
+            try {
+                val pcm = File(cacheDir, "last-recording.pcm")
+                val transcript = transcriber.transcribe(pcm).trim()
+                Log.d("BitWhisperVoice", "Transcription length=${transcript.length}")
+                if (transcript.isNotEmpty()) onTranscript(transcript)
+            } catch (error: Throwable) {
+                Log.e("BitWhisperVoice", "Transcription worker failed", error)
+            } finally {
+                transcriptionBusy.set(false)
             }
         }.start()
     }
