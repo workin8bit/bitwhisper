@@ -25,7 +25,12 @@ class CommandExecutor(private val context: Context) {
 
     private fun resolvePackage(query: String): String? {
         val normalized = query.trim().lowercase()
-            .replace(Regex("[.!?,]"), "")
+            .replace(Regex("[.!?,']"), "")
+            .replace("what s up", "whatsapp")
+            .replace("whats up", "whatsapp")
+            .replace("what up", "whatsapp")
+            .replace("what s app", "whatsapp")
+            .replace("whats app", "whatsapp")
             .replace("wa sap", "whatsapp")
             .replace("wasap", "whatsapp")
             .replace("watsap", "whatsapp")
