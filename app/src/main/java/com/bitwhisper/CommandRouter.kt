@@ -6,6 +6,10 @@ class CommandRouter {
         val text = input.trim().lowercase()
         return when {
             text == "buka pengaturan" || text == "buka settings" -> IntentResult.OpenApp("__settings__")
+            text in setOf("jawab panggilan", "angkat panggilan", "angkat") -> IntentResult.CallControl("answer")
+            text in setOf("tolak panggilan", "tolak", "tutup panggilan") -> IntentResult.CallControl("reject")
+            text in setOf("nyalakan loudspeaker", "aktifkan speaker", "pakai speaker") -> IntentResult.CallControl("speaker_on")
+            text in setOf("matikan loudspeaker", "matikan speaker", "kembali ke earpiece") -> IntentResult.CallControl("speaker_off")
             text.startsWith("buka ") || text.startsWith("bukak ") -> IntentResult.OpenApp(input.substringAfter(' ').trim())
             text.startsWith("buat catatan ") || text.startsWith("gawe cathetan ") -> IntentResult.CreateNote(input.substringAfter(' ').trim())
             text.startsWith("setel timer ") || text.startsWith("pasang timer ") || text.startsWith("gawe timer ") -> IntentResult.Timer(input.substringAfterLast(' ').toIntOrNull() ?: 0)
@@ -17,6 +21,7 @@ class CommandRouter {
 
 sealed interface IntentResult {
     data class OpenApp(val name: String) : IntentResult
+    data class CallControl(val action: String) : IntentResult
     data class CreateNote(val body: String) : IntentResult
     data class Timer(val minutes: Int) : IntentResult
     data class Flashlight(val enabled: Boolean) : IntentResult
