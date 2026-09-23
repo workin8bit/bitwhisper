@@ -119,7 +119,12 @@ class VoiceService : Service() {
         if (normalized == "baca layar" || normalized == "baca pesan" || normalized == "baca pesan terakhir") {
             val service = BitWhisperAccessibilityService.active
             val screenText = service?.let { ScreenReader(it).dump().trim() }.orEmpty()
-            val response = if (screenText.isBlank()) "Aku belum bisa melihat teks di layar sekarang." else screenText.lines().takeLast(12).joinToString(" ")
+            val notification = getSharedPreferences(BitWhisperNotificationListener.PREFS, MODE_PRIVATE).getString("last_notification", "").orEmpty()
+            val response = when {
+                screenText.isNotBlank() -> screenText.lines().takeLast(12).joinToString(" ")
+                notification.isNotBlank() -> notification
+                else -> "Aku belum bisa melihat pesan atau teks sekarang."
+            }
             history.add(text, response)
             speaker.speak(response)
             return IntentResult.Dictation(response)
