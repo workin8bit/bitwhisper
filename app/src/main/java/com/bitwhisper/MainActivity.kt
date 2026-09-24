@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         val input = EditText(this).apply { hint = "Ketik pesan..."; setSingleLine(false); setPadding(18, 12, 18, 12) }
         val send = button("Kirim") { sendChat(input) }
         val mic = button("🎙") { startForegroundService(Intent(this, VoiceService::class.java)); serviceStatus.text = "● Mendengarkan Volume Up"; serviceStatus.setTextColor(Color.BLACK) }
-        mic.background = rounded(Color.BLACK, 4)
+        mic.background = rounded(Color.BLACK, 4f)
         mic.setTextColor(Color.WHITE)
         val composer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, 12, 0, 0) }
         composer.addView(mic); composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f)); composer.addView(send)
