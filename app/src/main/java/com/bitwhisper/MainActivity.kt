@@ -18,14 +18,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var content: FrameLayout
     private lateinit var dashboard: LinearLayout
     private lateinit var messageList: LinearLayout
+    private val darkMode get() = getSharedPreferences("settings",0).getBoolean("dark_mode", false)
     private val pixelTypeface by lazy { runCatching { Typeface.createFromAsset(assets, "PixelOperator.ttf") }.getOrElse { Typeface.MONOSPACE } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = Color.WHITE
-        window.navigationBarColor = Color.WHITE
+        window.statusBarColor = if (darkMode) Color.rgb(18,18,18) else Color.WHITE
+        window.navigationBarColor = if (darkMode) Color.rgb(18,18,18) else Color.WHITE
         window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.WHITE); clipToPadding = false }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(if (darkMode) Color.rgb(18,18,18) else Color.WHITE); clipToPadding = false }
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(view.paddingLeft, bars.top, view.paddingRight, bars.bottom)
@@ -33,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         }
         ViewCompat.requestApplyInsets(root)
         val header = LinearLayout(this).apply { setPadding(28, 28, 28, 16); gravity = Gravity.CENTER_VERTICAL }
-        header.addView(TextView(this).apply { text = "BitWhisper"; textSize = 24f; setTextColor(Color.BLACK) }, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TextView(this).apply { text = "BitWhisper"; textSize = 24f; setTextColor(if (darkMode) Color.WHITE else Color.BLACK) }, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(button("⚙ Settings") { showSettings() })
         root.addView(header)
         content = FrameLayout(this)
@@ -45,15 +46,15 @@ class MainActivity : AppCompatActivity() {
     private fun showDashboard() {
         content.removeAllViews()
         dashboard = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(24, 12, 24, 24) }
-        dashboard.addView(TextView(this).apply { text = "Percakapan"; textSize = 28f; setTextColor(Color.BLACK); setPadding(0, 8, 0, 8) })
-        val serviceStatus = TextView(this).apply { text = "● Siap offline"; textSize = 14f; setTextColor(Color.BLACK); setPadding(0, 0, 0, 4) }
+        dashboard.addView(TextView(this).apply { text = "Percakapan"; textSize = 28f; setTextColor(if (darkMode) Color.WHITE else Color.BLACK); setPadding(0, 8, 0, 8) })
+        val serviceStatus = TextView(this).apply { text = "● Siap offline"; textSize = 14f; setTextColor(if (darkMode) Color.WHITE else Color.BLACK); setPadding(0, 0, 0, 4) }
         dashboard.addView(serviceStatus)
-        dashboard.addView(TextView(this).apply { text = "Tanya apa saja secara offline dengan BitWhisper"; textSize = 15f; setTextColor(Color.DKGRAY); setPadding(0, 0, 0, 18) })
+        dashboard.addView(TextView(this).apply { text = "Tanya apa saja secara offline dengan BitWhisper"; textSize = 15f; setTextColor(if (darkMode) Color.LTGRAY else Color.DKGRAY); setPadding(0, 0, 0, 18) })
         messageList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(4, 8, 4, 8) }
         dashboard.addView(ScrollView(this).apply { addView(messageList) }, LinearLayout.LayoutParams(-1, 0, 1f))
         val input = EditText(this).apply { hint = "Ketik pesan..."; setSingleLine(false); setPadding(18, 12, 18, 12) }
         val send = button("Kirim") { sendChat(input) }
-        val mic = button("🎙") { startForegroundService(Intent(this, VoiceService::class.java)); serviceStatus.text = "● Mendengarkan Volume Up"; serviceStatus.setTextColor(Color.BLACK) }
+        val mic = button("🎙") { startForegroundService(Intent(this, VoiceService::class.java)); serviceStatus.text = "● Mendengarkan Volume Up"; serviceStatus.setTextColor(if (darkMode) Color.WHITE else Color.BLACK) }
         mic.background = rounded(Color.BLACK, 4f)
         mic.setTextColor(Color.WHITE)
         val composer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, 12, 0, 0) }
@@ -84,8 +85,8 @@ class MainActivity : AppCompatActivity() {
     private fun addBubble(message: String, fromUser: Boolean) {
         if (!::messageList.isInitialized) return
         val bubble = TextView(this).apply {
-            text = message; textSize = 16f; typeface = pixelTypeface; setTextColor(if (fromUser) Color.WHITE else Color.BLACK); setPadding(22, 16, 22, 16)
-            background = rounded(if (fromUser) Color.BLACK else Color.WHITE, 28f)
+            text = message; textSize = 16f; typeface = pixelTypeface; setTextColor(if (fromUser) Color.WHITE else if (darkMode) Color.WHITE else Color.BLACK); setPadding(22, 16, 22, 16)
+            background = rounded(if (fromUser) Color.BLACK else if (darkMode) Color.rgb(35,35,35) else Color.WHITE, 28f)
         }
         val row = LinearLayout(this).apply { gravity = if (fromUser) Gravity.END else Gravity.START; setPadding(8, 6, 8, 6) }
         row.addView(bubble, LinearLayout.LayoutParams(-2, -2).apply { if (fromUser) marginStart = 56 else marginEnd = 56 })
@@ -94,8 +95,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSettings() {
         val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 16, 32, 32) }
-        layout.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(button("←") { showDashboard() }); addView(TextView(this).apply { text = "PENGATURAN"; textSize = 24f; typeface = pixelTypeface; setTextColor(Color.BLACK); setPadding(16, 0, 0, 0) }) })
-        layout.addView(TextView(this).apply { text = "KONFIGURASI OFFLINE • BITWHISPER"; typeface = pixelTypeface; textSize = 12f; setTextColor(Color.DKGRAY); setPadding(0, 8, 0, 20) })
+        layout.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(button("←") { showDashboard() }); addView(TextView(this).apply { text = "PENGATURAN"; textSize = 24f; typeface = pixelTypeface; setTextColor(if (darkMode) Color.WHITE else Color.BLACK); setPadding(16, 0, 0, 0) }) })
+        layout.addView(TextView(this).apply { text = "KONFIGURASI OFFLINE • BITWHISPER"; typeface = pixelTypeface; textSize = 12f; setTextColor(if (darkMode) Color.LTGRAY else Color.DKGRAY); setPadding(0, 8, 0, 20) })
         val models = ModelManager(this); val wakeModel = WakeWordModelManager(this); val status = TextView(this).apply { text = "Whisper: ${if (models.isWhisperReady()) "siap" else "belum"}\nChatbot: ${if (models.isChatReady()) "siap" else "belum"}\nWake word: ${if (wakeModel.isReady()) "siap" else "belum"}" }
         layout.addView(section("MODEL OFFLINE")); layout.addView(status); val modelStatus = TextView(this); layout.addView(modelStatus); val downloader = ModelDownloader(this)
         layout.addView(button("Unduh model Whisper") { modelStatus.text="Mengunduh Whisper..."; downloader.downloadWhisper({ p -> runOnUiThread { modelStatus.text="Whisper: $p%" } }) { runOnUiThread { modelStatus.text = if(it.isSuccess) "Whisper selesai" else "Whisper gagal" } } })
@@ -111,8 +112,8 @@ class MainActivity : AppCompatActivity() {
         content.addView(ScrollView(this).apply { addView(layout) })
     }
 
-    private fun section(title:String)=TextView(this).apply{text=title;typeface=pixelTypeface;textSize=13f;setTextColor(Color.BLACK);setPadding(0,20,0,8)}
-    private fun toggleDarkMode(){ val dark=!getSharedPreferences("settings",0).getBoolean("dark_mode",false); getSharedPreferences("settings",0).edit().putBoolean("dark_mode",dark).apply(); window.decorView.setBackgroundColor(if(dark) Color.rgb(25,28,35) else Color.rgb(248,249,252)); Toast.makeText(this,if(dark) "Mode gelap aktif" else "Mode terang aktif",Toast.LENGTH_SHORT).show() }
+    private fun section(title:String)=TextView(this).apply{text=title;typeface=pixelTypeface;textSize=13f;setTextColor(if (darkMode) Color.WHITE else Color.BLACK);setPadding(0,20,0,8)}
+    private fun toggleDarkMode(){ val dark=!darkMode; getSharedPreferences("settings",0).edit().putBoolean("dark_mode",dark).apply(); recreate() }
     private fun rounded(color:Int, radius:Float)=GradientDrawable().apply{setColor(color);cornerRadius=radius;setStroke(2, Color.BLACK)}
-    private fun setOutputMode(v:String)=getSharedPreferences("settings",0).edit().putString("output_mode",v).apply(); private fun setLanguage(v:String)=getSharedPreferences("settings",0).edit().putString("input_language",v).apply(); private fun setWakeWordEnabled(v:Boolean)=getSharedPreferences("settings",0).edit().putBoolean("wake_word_enabled",v).apply(); private fun saveWakeWord(v:String){if(v.trim().length>=3)getSharedPreferences("settings",0).edit().putString("wake_word",v.trim()).apply()}; private fun requestMic()=requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO),10); private fun button(label:String,action:()->Unit)=Button(this).apply{text=label;typeface=pixelTypeface;setTextColor(Color.BLACK);background=rounded(Color.WHITE,4f);setAllCaps(false);minHeight=52;setPadding(16,8,16,8);setOnClickListener{action()}}; private fun openBatterySettings(){runCatching{startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply{data=Uri.parse("package:$packageName")})}.getOrElse{startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))}}
+    private fun setOutputMode(v:String)=getSharedPreferences("settings",0).edit().putString("output_mode",v).apply(); private fun setLanguage(v:String)=getSharedPreferences("settings",0).edit().putString("input_language",v).apply(); private fun setWakeWordEnabled(v:Boolean)=getSharedPreferences("settings",0).edit().putBoolean("wake_word_enabled",v).apply(); private fun saveWakeWord(v:String){if(v.trim().length>=3)getSharedPreferences("settings",0).edit().putString("wake_word",v.trim()).apply()}; private fun requestMic()=requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO),10); private fun button(label:String,action:()->Unit)=Button(this).apply{text=label;typeface=pixelTypeface;setTextColor(if (darkMode) Color.WHITE else Color.BLACK);background=rounded(if (darkMode) Color.rgb(35,35,35) else Color.WHITE,4f);setAllCaps(false);minHeight=52;setPadding(16,8,16,8);setOnClickListener{action()}}; private fun openBatterySettings(){runCatching{startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply{data=Uri.parse("package:$packageName")})}.getOrElse{startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))}}
 }
