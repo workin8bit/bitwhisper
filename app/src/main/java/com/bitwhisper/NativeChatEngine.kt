@@ -9,6 +9,7 @@ class LocalChatEngine(context: Context) : OfflineChatEngine {
         if (!models.isChatReady() || !NativeInference.isAvailable()) {
             return "Model chatbot lokal belum siap. Pasang model GGUF dan runtime native terlebih dahulu."
         }
-        return NativeInference.chat(models.chatModel, fullPrompt)
+        // Voice responses should be short; fewer generated tokens reduce CPU latency.
+        return NativeInference.chat(models.chatModel, fullPrompt, 128)
     }
 }

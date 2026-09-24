@@ -8,7 +8,7 @@ object ChatPromptBuilder {
 
     fun build(mode: ChatMode, prompt: String, history: List<Pair<String, String>>): String = buildString {
         append(systemPrompt(mode)); append("\n\n")
-        history.takeLast(10).forEach { (user, assistant) ->
+        history.takeLast(4).forEach { (user, assistant) ->
             append("Pengguna: ").append(user).append("\n")
             append("BitWhisper: ").append(assistant).append("\n")
         }
