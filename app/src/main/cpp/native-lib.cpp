@@ -6,6 +6,7 @@
 #include <string>
 #include <cstdint>
 #include <mutex>
+#include <llama.h>
 
 #define BW_LOGI(...) __android_log_print(ANDROID_LOG_INFO, "NativeInference", __VA_ARGS__)
 #define BW_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "NativeInference", __VA_ARGS__)
@@ -73,7 +74,54 @@ Java_com_bitwhisper_NativeInference_nativeTranscribe(JNIEnv* env, jobject, jstri
     return env->NewStringUTF(result.c_str());
 }
 
+static std::mutex g_chat_mutex;
+static llama_model * g_chat_model = nullptr;
+static std::string g_chat_model_path;
+
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_bitwhisper_NativeInference_nativeChat(JNIEnv* env, jobject, jstring, jstring, jint) {
-    return env->NewStringUTF("Chatbot native belum terhubung.");
+Java_com_bitwhisper_NativeInference_nativeChat(JNIEnv* env, jobject, jstring modelJ, jstring promptJ, jint maxTokens) {
+    const char * modelPath = env->GetStringUTFChars(modelJ, nullptr);
+    const char * prompt = env->GetStringUTFChars(promptJ, nullptr);
+    std::lock_guard<std::mutex> lock(g_chat_mutex);
+    llama_backend_init();
+    if (!g_chat_model || g_chat_model_path != modelPath) {
+        if (g_chat_model) llama_model_free(g_chat_model);
+        llama_model_params mp = llama_model_default_params();
+        mp.n_gpu_layers = 0;
+        BW_LOGI("BitWhisperChat: loading model");
+        g_chat_model = llama_model_load_from_file(modelPath, mp);
+        g_chat_model_path = g_chat_model ? modelPath : "";
+        BW_LOGI("BitWhisperChat: model loaded=%s", g_chat_model ? "yes" : "no");
+    }
+    std::string result;
+    if (g_chat_model) {
+        llama_context_params cp = llama_context_default_params();
+        cp.n_ctx = 2048; cp.n_batch = 512; cp.n_threads = 4; cp.n_threads_batch = 4;
+        llama_context * ctx = llama_init_from_model(g_chat_model, cp);
+        if (ctx) {
+            const int n = -llama_tokenize(llama_model_get_vocab(g_chat_model), prompt, -1, nullptr, 0, true, true);
+            std::vector<llama_token> tokens(static_cast<size_t>(n));
+            llama_tokenize(llama_model_get_vocab(g_chat_model), prompt, -1, tokens.data(), n, true, true);
+            llama_batch batch = llama_batch_init(n + 1, 0, 1);
+            for (int i = 0; i < n; ++i) { batch.token[i] = tokens[i]; batch.pos[i] = i; batch.n_seq_id[i] = 1; batch.seq_id[i][0] = 0; batch.logits[i] = (i == n - 1); }
+            BW_LOGI("BitWhisperChat: generation started");
+            if (llama_decode(ctx, batch) == 0) {
+                auto * sampler = llama_sampler_init_greedy();
+                const int limit = maxTokens > 0 ? maxTokens : 128;
+                for (int i = 0; i < limit; ++i) {
+                    const llama_token tok = llama_sampler_sample(sampler, ctx, -1);
+                    if (llama_vocab_is_eog(llama_model_get_vocab(g_chat_model), tok)) break;
+                    char piece[256]; const int len = llama_token_to_piece(llama_model_get_vocab(g_chat_model), tok, piece, sizeof(piece), 0, true);
+                    if (len > 0) result.append(piece, len);
+                    batch.token[0] = tok; batch.pos[0] = n + i; batch.n_seq_id[0] = 1; batch.seq_id[0][0] = 0; batch.logits[0] = true;
+                    if (llama_decode(ctx, batch) != 0) break;
+                }
+                llama_sampler_free(sampler);
+            }
+            llama_batch_free(batch); llama_free(ctx);
+            BW_LOGI("BitWhisperChat: generation completed length=%zu", result.size());
+        }
+    }
+    env->ReleaseStringUTFChars(modelJ, modelPath); env->ReleaseStringUTFChars(promptJ, prompt);
+    return env->NewStringUTF(result.c_str());
 }
