@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class VoiceService : Service() {
     private val commandRouter = CommandRouter()
     private val transcriber: TranscriptionEngine by lazy { LocalWhisperEngine(this) }
+    private val chatEngine: OfflineChatEngine by lazy { LocalChatEngine(this) }
     private val commandExecutor by lazy { CommandExecutor(this) }
     private val speaker by lazy { ResponseSpeaker(this) }
     private val history by lazy { ConversationStore(this) }
@@ -106,7 +107,8 @@ class VoiceService : Service() {
     }
 
     /** Entry point shared by Whisper and tests. */
-    fun onTranscript(text: String): IntentResult {
+    fun onTranscript(input: String): IntentResult {
+        var text = input
         val normalized = text.trim().lowercase()
         val settingsSearch = Regex("buka (?:pengaturan|settings)[, ]+cari (.+)", RegexOption.IGNORE_CASE).find(text.trim())
         if (settingsSearch != null) {
@@ -178,6 +180,13 @@ class VoiceService : Service() {
             history.add(text, response); speaker.speak(response)
             return IntentResult.Dictation(response)
         }
+        if (isConversationalQuestion(text)) {
+            val response = chatEngine.respond(text, emptyList(), ChatMode.GENERAL).trim()
+            val safeResponse = response.ifBlank { "Aku belum bisa menjawab itu sekarang." }
+            history.add(text, safeResponse)
+            speaker.speak(safeResponse)
+            return IntentResult.Dictation(safeResponse)
+        }
         val plan = planner.plan(text)
         if (plan.size > 1) {
             val response = "Saya menyiapkan ${plan.size} langkah untuk perintah ini."
@@ -191,7 +200,23 @@ class VoiceService : Service() {
             speaker.speak(response)
             return IntentResult.Dictation(response)
         }
-        val result = commandRouter.route(text)
+        var result = commandRouter.route(text)
+        // Only invoke Qwen when the deterministic router cannot recognize an action.
+        // Simple commands have already returned above and never pay this latency.
+        if (result is IntentResult.Dictation && looksLikeAmbiguousCommand(text)) {
+            val corrected = chatEngine.respond(
+                "Koreksi ucapan berikut menjadi satu perintah BitWhisper yang singkat. " +
+                    "Kembalikan hanya perintahnya, tanpa penjelasan. Jika bukan perintah, kembalikan TIDAK: $text",
+                emptyList(), ChatMode.GENERAL
+            ).trim().removeSuffix(".")
+            if (corrected.isNotBlank() && !corrected.equals("TIDAK", true) && corrected.length <= 120) {
+                val correctedResult = commandRouter.route(corrected)
+                if (correctedResult !is IntentResult.Dictation) {
+                    result = correctedResult
+                    text = corrected
+                }
+            }
+        }
         if (ActionSafety.risk(text) == ActionRisk.IMPORTANT) {
             val response = confirmations.request(text)
             history.add(text, response)
@@ -203,6 +228,18 @@ class VoiceService : Service() {
         history.add(text, response)
         speaker.speak(response)
         return result
+    }
+
+    private fun looksLikeAmbiguousCommand(text: String): Boolean {
+        val value = text.lowercase()
+        return value.split(Regex("\\s+")).size <= 8 &&
+            listOf("buka", "puka", "bukak", "ketik", "tulis", "nyala", "mati", "aktif", "setel", "pasang", "buat", "kirim").any { value.contains(it) }
+    }
+
+    private fun isConversationalQuestion(text: String): Boolean {
+        val value = text.trim().lowercase()
+        val questionWords = listOf("apa ", "siapa ", "kenapa ", "bagaimana ", "kapan ", "dimana ", "di mana ", "jelaskan ", "ceritakan ", "bisakah ", "bolehkah ")
+        return value.endsWith("?") || questionWords.any { value.startsWith(it) } || value in setOf("halo", "hai", "kamu siapa", "apa kabar")
     }
 
     private fun executeConfirmedUi(command: UiCommand): String {
