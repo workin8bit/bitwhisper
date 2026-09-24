@@ -27,7 +27,7 @@ target_include_directories(llama PRIVATE ${llama_SOURCE_DIR}/ggml/include)
 
 FetchContent_Declare(whisper
     GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
-    GIT_TAG v1.7.4
+    GIT_TAG v1.9.4
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(whisper)
 
