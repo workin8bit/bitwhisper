@@ -13,6 +13,9 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        // The target device is arm64; llama.cpp's current ARMv7 backend
+        // does not compile with the Android NDK used here.
+        ndk { abiFilters += setOf("arm64-v8a") }
         externalNativeBuild { cmake { cppFlags += "-std=c++17" } }
     }
     compileOptions {
