@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var content: FrameLayout
     private lateinit var dashboard: LinearLayout
     private lateinit var messageList: LinearLayout
+    private val pixelTypeface by lazy { runCatching { Typeface.createFromAsset(assets, "PixelOperator.ttf") }.getOrElse { Typeface.MONOSPACE } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +73,7 @@ class MainActivity : AppCompatActivity() {
     private fun addBubble(message: String, fromUser: Boolean) {
         if (!::messageList.isInitialized) return
         val bubble = TextView(this).apply {
-            text = message; textSize = 16f; setTextColor(if (fromUser) Color.WHITE else Color.BLACK); setPadding(22, 16, 22, 16)
+            text = message; textSize = 16f; typeface = pixelTypeface; setTextColor(if (fromUser) Color.WHITE else Color.BLACK); setPadding(22, 16, 22, 16)
             background = rounded(if (fromUser) Color.BLACK else Color.WHITE, 28f)
         }
         val row = LinearLayout(this).apply { gravity = if (fromUser) Gravity.END else Gravity.START; setPadding(8, 6, 8, 6) }
@@ -100,5 +101,5 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleDarkMode(){ val dark=!getSharedPreferences("settings",0).getBoolean("dark_mode",false); getSharedPreferences("settings",0).edit().putBoolean("dark_mode",dark).apply(); window.decorView.setBackgroundColor(if(dark) Color.rgb(25,28,35) else Color.rgb(248,249,252)); Toast.makeText(this,if(dark) "Mode gelap aktif" else "Mode terang aktif",Toast.LENGTH_SHORT).show() }
     private fun rounded(color:Int, radius:Float)=GradientDrawable().apply{setColor(color);cornerRadius=radius;setStroke(2, Color.BLACK)}
-    private fun setOutputMode(v:String)=getSharedPreferences("settings",0).edit().putString("output_mode",v).apply(); private fun setLanguage(v:String)=getSharedPreferences("settings",0).edit().putString("input_language",v).apply(); private fun setWakeWordEnabled(v:Boolean)=getSharedPreferences("settings",0).edit().putBoolean("wake_word_enabled",v).apply(); private fun saveWakeWord(v:String){if(v.trim().length>=3)getSharedPreferences("settings",0).edit().putString("wake_word",v.trim()).apply()}; private fun requestMic()=requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO),10); private fun button(label:String,action:()->Unit)=Button(this).apply{text=label;typeface=Typeface.MONOSPACE;setTextColor(Color.BLACK);background=rounded(Color.WHITE,4f);setOnClickListener{action()}}; private fun openBatterySettings(){runCatching{startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply{data=Uri.parse("package:$packageName")})}.getOrElse{startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))}}
+    private fun setOutputMode(v:String)=getSharedPreferences("settings",0).edit().putString("output_mode",v).apply(); private fun setLanguage(v:String)=getSharedPreferences("settings",0).edit().putString("input_language",v).apply(); private fun setWakeWordEnabled(v:Boolean)=getSharedPreferences("settings",0).edit().putBoolean("wake_word_enabled",v).apply(); private fun saveWakeWord(v:String){if(v.trim().length>=3)getSharedPreferences("settings",0).edit().putString("wake_word",v.trim()).apply()}; private fun requestMic()=requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO),10); private fun button(label:String,action:()->Unit)=Button(this).apply{text=label;typeface=pixelTypeface;setTextColor(Color.BLACK);background=rounded(Color.WHITE,4f);setOnClickListener{action()}}; private fun openBatterySettings(){runCatching{startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply{data=Uri.parse("package:$packageName")})}.getOrElse{startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))}}
 }
