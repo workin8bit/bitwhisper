@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showSettings() {
         val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 16, 32, 32) }
-        layout.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(button("←") { showDashboard() }); addView(TextView(this).apply { text = "PENGATURAN"; textSize = 24f; typeface = pixelTypeface; setTextColor(if (darkMode) Color.WHITE else Color.BLACK); setPadding(16, 0, 0, 0) }) })
+        layout.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(button("←") { showDashboard() }); addView(TextView(this@MainActivity).apply { text = "PENGATURAN"; textSize = 24f; typeface = pixelTypeface; setTextColor(if (darkMode) Color.WHITE else Color.BLACK); setPadding(16, 0, 0, 0) }) })
         layout.addView(TextView(this).apply { text = "KONFIGURASI OFFLINE • BITWHISPER"; typeface = pixelTypeface; textSize = 12f; setTextColor(if (darkMode) Color.LTGRAY else Color.DKGRAY); setPadding(0, 8, 0, 20) })
         val models = ModelManager(this); val wakeModel = WakeWordModelManager(this); val status = TextView(this).apply { text = "Whisper: ${if (models.isWhisperReady()) "siap" else "belum"}\nChatbot: ${if (models.isChatReady()) "siap" else "belum"}\nWake word: ${if (wakeModel.isReady()) "siap" else "belum"}" }
         layout.addView(section("MODEL OFFLINE")); layout.addView(status); val modelStatus = TextView(this); layout.addView(modelStatus); val downloader = ModelDownloader(this)
