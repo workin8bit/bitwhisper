@@ -48,6 +48,18 @@ class MainActivity : AppCompatActivity() {
         val wakeWordInput = EditText(this).apply { hint = "Contoh: hey bro"; setText(getSharedPreferences("settings", MODE_PRIVATE).getString("wake_word", "hey bro")) }
         layout.addView(wakeWordInput)
         layout.addView(button("Simpan wake word") { saveWakeWord(wakeWordInput.text.toString()) })
+        val enrollment = WakeWordEnrollmentStore(this)
+        val enrollmentStatus = TextView(this).apply { text = "Sample hey bro: ${enrollment.sampleCount}/3" }
+        layout.addView(enrollmentStatus)
+        layout.addView(button("Rekam sample hey bro") {
+            enrollmentStatus.text = "Ucapkan hey bro sekarang..."
+            Thread {
+                runCatching { enrollment.addPcmSample(WakeWordEnrollmentStore.recordSample()) }
+                    .onSuccess { runOnUiThread { enrollmentStatus.text = "Sample hey bro: ${enrollment.sampleCount}/3" } }
+                    .onFailure { runOnUiThread { enrollmentStatus.text = "Gagal merekam sample: ${it.message}" } }
+            }.start()
+        })
+        layout.addView(button("Hapus sample wake word") { enrollment.clear(); enrollmentStatus.text = "Sample hey bro: 0/3" })
         layout.addView(button("Aktifkan wake word") { setWakeWordEnabled(true) })
         layout.addView(button("Matikan wake word") { setWakeWordEnabled(false) })
         layout.addView(button("Mulai BitWhisper") { startForegroundService(Intent(this, VoiceService::class.java)) })

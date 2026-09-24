@@ -55,7 +55,8 @@ class VoiceService : Service() {
     private fun startWakeWordIfEnabled() {
         val settings = WakeWordSettings(this)
         if (!settings.enabled) return
-        val engine = OnnxWakeWordEngine(this)
+        val enrolled = TemplateWakeWordEngine(this)
+        val engine: WakeWordEngine = if (enrolled.isAvailable()) enrolled else OnnxWakeWordEngine(this)
         if (!engine.isAvailable()) return
         wakeEngine = engine
         runCatching { engine.start { startRecording() } }.onFailure { wakeEngine = null }
