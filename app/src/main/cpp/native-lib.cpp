@@ -60,7 +60,7 @@ Java_com_bitwhisper_NativeInference_nativeTranscribe(JNIEnv* env, jobject, jstri
     if (g_context && read_wav_pcm16(audio, pcm)) {
         whisper_full_params params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
         params.print_progress = false; params.print_realtime = false; params.print_timestamps = false;
-        params.translate = false; params.language = language; params.n_threads = 4;
+        params.translate = false; params.language = language; params.n_threads = 8;
         params.no_context = true;
         BW_LOGI("running inference samples=%zu", pcm.size());
         const int rc = whisper_full(g_context, params, pcm.data(), pcm.size());
@@ -96,7 +96,7 @@ Java_com_bitwhisper_NativeInference_nativeChat(JNIEnv* env, jobject, jstring mod
     std::string result;
     if (g_chat_model) {
         llama_context_params cp = llama_context_default_params();
-        cp.n_ctx = 2048; cp.n_batch = 512; cp.n_threads = 4; cp.n_threads_batch = 4;
+        cp.n_ctx = 1024; cp.n_batch = 256; cp.n_threads = 8; cp.n_threads_batch = 8;
         llama_context * ctx = llama_init_from_model(g_chat_model, cp);
         if (ctx) {
             const int n = -llama_tokenize(llama_model_get_vocab(g_chat_model), prompt, -1, nullptr, 0, true, true);
