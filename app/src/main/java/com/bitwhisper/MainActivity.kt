@@ -52,6 +52,25 @@ class MainActivity : AppCompatActivity() {
         dashboard.addView(TextView(this).apply { text = "Tanya apa saja secara offline dengan BitWhisper"; textSize = 15f; setTextColor(if (darkMode) Color.LTGRAY else Color.DKGRAY); setPadding(0, 0, 0, 18) })
         messageList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(4, 8, 4, 8) }
         dashboard.addView(ScrollView(this).apply { addView(messageList) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        
+        val startBtn = button("Mulai BitWhisper") {
+            startForegroundService(Intent(this, VoiceService::class.java))
+            serviceStatus.text = "[LISTENING] Wake word aktif"
+            serviceStatus.setTextColor(if (darkMode) Color.GREEN else Color.rgb(0, 128, 0))
+        }
+        startBtn.background = rounded(Color.rgb(0, 128, 0), 4f)
+        startBtn.setTextColor(Color.WHITE)
+        startBtn.minHeight = 56
+        
+        val stopBtn = button("Hentikan BitWhisper") {
+            stopService(Intent(this, VoiceService::class.java))
+            serviceStatus.text = "[OFFLINE] Siap offline"
+            serviceStatus.setTextColor(if (darkMode) Color.WHITE else Color.BLACK)
+        }
+        stopBtn.background = rounded(Color.rgb(180, 0, 0), 4f)
+        stopBtn.setTextColor(Color.WHITE)
+        stopBtn.minHeight = 56
+        
         val input = EditText(this).apply { hint = "Ketik pesan..."; setSingleLine(false); setPadding(18, 12, 18, 12) }
         val send = button("Kirim") { sendChat(input) }
         val mic = button("[ MIC ]") { startForegroundService(Intent(this, VoiceService::class.java)); serviceStatus.text = "[LISTENING] Volume Up"; serviceStatus.setTextColor(if (darkMode) Color.WHITE else Color.BLACK) }
@@ -59,6 +78,12 @@ class MainActivity : AppCompatActivity() {
         mic.setTextColor(Color.WHITE)
         val composer = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, 12, 0, 0) }
         composer.addView(mic); composer.addView(input, LinearLayout.LayoutParams(0, -2, 1f)); composer.addView(send)
+        
+        val controls = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, 12, 0, 0) }
+        controls.addView(startBtn, LinearLayout.LayoutParams(0, -2, 1f))
+        controls.addView(stopBtn, LinearLayout.LayoutParams(0, -2, 1f))
+        
+        dashboard.addView(controls)
         dashboard.addView(composer)
         content.addView(ScrollView(this).apply { addView(dashboard) })
         refreshHistory()
@@ -97,17 +122,49 @@ class MainActivity : AppCompatActivity() {
         val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 16, 32, 32); setBackgroundColor(if (darkMode) Color.rgb(18,18,18) else Color.WHITE); isClickable = true; isFocusable = true }
         layout.addView(LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; addView(button("< BACK") { showDashboard() }); addView(TextView(this@MainActivity).apply { text = "PENGATURAN"; textSize = 24f; typeface = pixelTypeface; setTextColor(if (darkMode) Color.WHITE else Color.BLACK); setPadding(16, 0, 0, 0) }) })
         layout.addView(TextView(this).apply { text = "KONFIGURASI OFFLINE - BITWHISPER"; typeface = pixelTypeface; textSize = 12f; setTextColor(if (darkMode) Color.LTGRAY else Color.DKGRAY); setPadding(0, 8, 0, 20) })
-        val models = ModelManager(this); val wakeModel = WakeWordModelManager(this); val enrollment = WakeWordEnrollmentStore(this); val status = TextView(this).apply { text = "Whisper: ${if (models.isWhisperReady()) "siap" else "belum"}`nChatbot: ${if (models.isChatReady()) "siap" else "belum"}`nWake word: ${if (enrollment.sampleCount >= 3 || wakeModel.isReady()) "siap" else "belum"}" }
-        layout.addView(section("MODEL OFFLINE")); layout.addView(status); val modelStatus = TextView(this); layout.addView(modelStatus); val downloader = ModelDownloader(this)
+        
+        val models = ModelManager(this); val wakeModel = WakeWordModelManager(this); val enrollment = WakeWordEnrollmentStore(this)
+        val status = TextView(this).apply { text = "Whisper: ${if (models.isWhisperReady()) "siap" else "belum"}\nChatbot: ${if (models.isChatReady()) "siap" else "belum"}\nWake word: ${if (enrollment.sampleCount >= 3 || wakeModel.isReady()) "siap" else "belum"}"; setPadding(0, 0, 0, 16) }
+        layout.addView(section("MODEL OFFLINE")); layout.addView(status)
+        
+        val modelStatus = TextView(this); layout.addView(modelStatus)
+        val downloader = ModelDownloader(this)
         layout.addView(button("Unduh model Whisper") { modelStatus.text="Mengunduh Whisper..."; downloader.downloadWhisper({ p -> runOnUiThread { modelStatus.text="Whisper: $p%" } }) { runOnUiThread { modelStatus.text = if(it.isSuccess) "Whisper selesai" else "Whisper gagal" } } })
         layout.addView(button("Unduh model chatbot") { modelStatus.text="Mengunduh chatbot..."; downloader.downloadChat({ p -> runOnUiThread { modelStatus.text="Chatbot: $p%" } }) { runOnUiThread { modelStatus.text = if(it.isSuccess) "Chatbot selesai" else "Chatbot gagal" } } })
-        layout.addView(button("Izinkan mikrofon") { requestMic() }); if (android.os.Build.VERSION.SDK_INT >= 33) layout.addView(button("Izinkan notifikasi") { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 11) })
-        layout.addView(button("Aktifkan Accessibility Service") { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }); layout.addView(button("Atur baterai tanpa pembatasan") { openBatterySettings() })
-        layout.addView(TextView(this).apply { text="Output jawaban"; textSize=18f; setPadding(0,20,0,8) }); listOf("Text saja" to "text", "Voice saja" to "voice", "Text + Voice" to "both").forEach { layout.addView(button(it.first) { setOutputMode(it.second) }) }
-        layout.addView(TextView(this).apply { text="Bahasa input"; textSize=18f; setPadding(0,20,0,8) }); listOf("Otomatis" to "auto", "Indonesia" to "id", "Jawa" to "jv").forEach { layout.addView(button(it.first) { setLanguage(it.second) }) }
-        layout.addView(TextView(this).apply { text="Mode chatbot"; textSize=18f; setPadding(0,20,0,8) }); layout.addView(button("Umum") { ChatSettings(this).setMode(ChatMode.GENERAL) }); layout.addView(button("Scientific") { ChatSettings(this).setMode(ChatMode.SCIENTIFIC) })
-        layout.addView(TextView(this).apply { text="Wake word"; textSize=18f; setPadding(0,20,0,8) }); val wake = EditText(this).apply { hint="hey bro"; setText(getSharedPreferences("settings",0).getString("wake_word","hey bro")) }; layout.addView(wake); layout.addView(button("Simpan wake word") { saveWakeWord(wake.text.toString()) })
-        val enrollStatus=TextView(this).apply{text="Sample hey bro: ${enrollment.sampleCount}/3"}; layout.addView(enrollStatus); layout.addView(button("Rekam sample hey bro") { enrollStatus.text="Ucapkan hey bro sekarang..."; Thread { runCatching { enrollment.addPcmSample(WakeWordEnrollmentStore.recordSample()) }.onSuccess { runOnUiThread { enrollStatus.text="Sample hey bro: ${enrollment.sampleCount}/3" } }.onFailure { runOnUiThread { enrollStatus.text="Gagal merekam sample" } } }.start() }); layout.addView(button("Hapus sample wake word") { enrollment.clear(); enrollStatus.text="Sample hey bro: 0/3" })
+        
+        layout.addView(section("IZIN & LAYANAN"))
+        layout.addView(button("Izinkan mikrofon") { requestMic() })
+        if (android.os.Build.VERSION.SDK_INT >= 33) layout.addView(button("Izinkan notifikasi") { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 11) })
+        layout.addView(button("Aktifkan Accessibility Service") { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) })
+        layout.addView(button("Atur baterai tanpa pembatasan") { openBatterySettings() })
+        
+        layout.addView(section("OUTPUT JAWABAN"))
+        listOf("Text saja" to "text", "Voice saja" to "voice", "Text + Voice" to "both").forEach { layout.addView(button(it.first) { setOutputMode(it.second) }) }
+        
+        layout.addView(section("BAHASA INPUT"))
+        listOf("Otomatis" to "auto", "Indonesia" to "id", "Jawa" to "jv").forEach { layout.addView(button(it.first) { setLanguage(it.second) }) }
+        
+        layout.addView(section("MODE CHATBOT"))
+        layout.addView(button("Umum") { ChatSettings(this).setMode(ChatMode.GENERAL) })
+        layout.addView(button("Scientific") { ChatSettings(this).setMode(ChatMode.SCIENTIFIC) })
+        
+        layout.addView(section("WAKE WORD"))
+        val wakeEnabled = getSharedPreferences("settings",0).getBoolean("wake_word_enabled", true)
+        layout.addView(button(optionLabel("Aktifkan wake word", wakeEnabled)) { val newVal = !wakeEnabled; setWakeWordEnabled(newVal); showSettings() })
+        
+        val wake = EditText(this).apply { hint="hey bro"; setText(getSharedPreferences("settings",0).getString("wake_word","hey bro")); setPadding(16, 12, 16, 12); setBackgroundColor(if (darkMode) Color.rgb(35,35,35) else Color.WHITE); setTextColor(if (darkMode) Color.WHITE else Color.BLACK) }
+        layout.addView(wake)
+        layout.addView(button("Simpan wake word") { saveWakeWord(wake.text.toString()) })
+        
+        val enrollStatus=TextView(this).apply{text="Sample hey bro: ${enrollment.sampleCount}/3"; setPadding(0, 12, 0, 8)}
+        layout.addView(enrollStatus)
+        layout.addView(button("Rekam sample hey bro") { enrollStatus.text="Ucapkan hey bro sekarang..."; Thread { runCatching { enrollment.addPcmSample(WakeWordEnrollmentStore.recordSample()) }.onSuccess { runOnUiThread { enrollStatus.text="Sample hey bro: ${enrollment.sampleCount}/3" } }.onFailure { runOnUiThread { enrollStatus.text="Gagal merekam sample" } } }.start() })
+        layout.addView(button("Hapus sample wake word") { enrollment.clear(); enrollStatus.text="Sample hey bro: 0/3" })
+        
+        layout.addView(section("TAMPILAN"))
+        val darkModeEnabled = darkMode
+        layout.addView(button(optionLabel("Mode gelap", darkModeEnabled)) { toggleDarkMode() })
+        
         layout.addView(button("< BACK") { showDashboard() })
         content.addView(ScrollView(this).apply { addView(layout) })
     }
