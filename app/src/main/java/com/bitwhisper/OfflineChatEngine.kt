@@ -9,6 +9,6 @@ interface OfflineChatEngine {
 }
 
 class UnavailableChatEngine : OfflineChatEngine {
-    override suspend fun respond(prompt: String, history: List<Pair<String, String>>, mode: ChatMode): String =
+    override fun respond(prompt: String, history: List<Pair<String, String>>, mode: ChatMode): String =
         "Mode chatbot lokal belum diaktifkan. Silakan pasang model GGUF BitWhisper."
 }
