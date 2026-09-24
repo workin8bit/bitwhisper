@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
     private lateinit var content: FrameLayout
     private lateinit var dashboard: LinearLayout
-    private lateinit var historyText: TextView
+    private lateinit var messageList: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,8 +36,8 @@ class MainActivity : AppCompatActivity() {
         val serviceStatus = TextView(this).apply { text = "● Siap offline"; textSize = 14f; setTextColor(Color.rgb(30,145,80)); setPadding(0, 0, 0, 4) }
         dashboard.addView(serviceStatus)
         dashboard.addView(TextView(this).apply { text = "Tanya apa saja secara offline dengan BitWhisper"; textSize = 15f; setTextColor(Color.DKGRAY); setPadding(0, 0, 0, 18) })
-        historyText = TextView(this).apply { textSize = 16f; setTextColor(Color.rgb(35,40,50)); setPadding(18, 18, 18, 18); setBackgroundColor(Color.WHITE) }
-        dashboard.addView(ScrollView(this).apply { addView(historyText) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        messageList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(4, 8, 4, 8) }
+        dashboard.addView(ScrollView(this).apply { addView(messageList) }, LinearLayout.LayoutParams(-1, 0, 1f))
         val input = EditText(this).apply { hint = "Ketik pesan..."; setSingleLine(false); setPadding(18, 12, 18, 12) }
         val send = button("Kirim") { sendChat(input) }
         val mic = button("🎙") { startForegroundService(Intent(this, VoiceService::class.java)); serviceStatus.text = "● Mendengarkan Volume Up"; serviceStatus.setTextColor(Color.rgb(210,80,55)) }
@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun sendChat(input: EditText) {
         val prompt = input.text.toString().trim(); if (prompt.isEmpty()) return
-        input.text.clear(); historyText.text = "BitWhisper sedang berpikir..."
+        input.text.clear(); refreshHistory(); addBubble("BitWhisper sedang berpikir...", false)
         Thread {
             val answer = LocalChatEngine(this).respond(prompt, ConversationStore(this).all().takeLast(4).map { it.user to it.assistant }, ChatSettings(this).mode())
             ConversationStore(this).add(prompt, answer)
@@ -60,8 +60,24 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun refreshHistory() { historyText.text = historyTextValue() }
-    private fun historyTextValue(): String = ConversationStore(this).all().takeLast(30).joinToString("\n\n") { "Anda\n${it.user}\n\nBitWhisper\n${it.assistant}" }.ifEmpty { "Belum ada percakapan.\n\nMulai dengan pertanyaan di bawah." }
+    private fun refreshHistory() {
+        if (!::messageList.isInitialized) return
+        messageList.removeAllViews()
+        val entries = ConversationStore(this).all().takeLast(30)
+        if (entries.isEmpty()) addBubble("Belum ada percakapan.\n\nMulai dengan pertanyaan di bawah.", false)
+        entries.forEach { addBubble(it.user, true); addBubble(it.assistant, false) }
+    }
+
+    private fun addBubble(message: String, fromUser: Boolean) {
+        if (!::messageList.isInitialized) return
+        val bubble = TextView(this).apply {
+            text = message; textSize = 16f; setTextColor(if (fromUser) Color.WHITE else Color.rgb(35,40,50)); setPadding(22, 16, 22, 16)
+            background = rounded(if (fromUser) Color.rgb(35,95,180) else Color.WHITE, 28f)
+        }
+        val row = LinearLayout(this).apply { gravity = if (fromUser) Gravity.END else Gravity.START; setPadding(8, 6, 8, 6) }
+        row.addView(bubble, LinearLayout.LayoutParams(-2, -2).apply { if (fromUser) marginStart = 56 else marginEnd = 56 })
+        messageList.addView(row)
+    }
 
     private fun showSettings() {
         val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 16, 32, 32) }
