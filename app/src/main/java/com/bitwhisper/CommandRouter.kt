@@ -36,8 +36,57 @@ class CommandRouter {
         )
         replacements.forEach { (wrong, right) -> if (text.startsWith(wrong)) text = right + text.removePrefix(wrong) }
         text = text.replace("lets up", "whatsapp")
-            .replace("let s up", "whatsapp")
-            .replace("let sup", "whatsapp")
+    .replace("let s up", "whatsapp")
+    .replace("let sup", "whatsapp")
+    .replace("wads app", "whatsapp")
+    .replace("wats app", "whatsapp")
+    .replace("what s app", "whatsapp")
+    .replace("watsapp", "whatsapp")
+    .replace("wacap", "whatsapp")
+    .replace("wa sap", "whatsapp")
+    .replace("wasap", "whatsapp")
+    .replace(Regex("\\bwa\\b"), "whatsapp")
+
+PowerShell
+
+git status --short
+Harus terlihat:
+
+text
+
+ M app/src/main/java/com/bitwhisper/CommandRouter.kt
+Kemudian:
+
+PowerShell
+
+git add app/src/main/java/com/bitwhisper/CommandRouter.kt
+git commit -m "fix: normalize common Whisper WhatsApp misrecognitions"
+git push origin arena/01a0c7e5-bitwhisper
+File font tambahan
+File berikut boleh dibiarkan untracked dan tidak perlu di-add:
+
+text
+
+.gradle/
+.kotlin/
+app/.cxx/
+app/build/
+build-error.log
+crash.log
+ggml-tiny.bin
+kotlin-error.log
+Untuk font, cukup commit:
+
+text
+
+app/src/main/assets/PixelOperator.ttf
+File font Pixel Operator lain dan LICENSE.txt tidak perlu di-add kecuali memang ingin semua varian font dikirim ke APK.
+
+
+6s | 2 minutes ago
+16.20
+
+
         return text
     }
 }
