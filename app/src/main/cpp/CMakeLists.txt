@@ -24,7 +24,7 @@ FetchContent_MakeAvailable(whisper)
 
 FetchContent_Declare(llama
     GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-    GIT_TAG b3900
+    GIT_TAG b9999
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(llama)
 
