@@ -27,6 +27,8 @@ FetchContent_Declare(llama
     GIT_TAG b9999
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(llama)
+# llama.h includes gguf.h from llama.cpp's ggml public headers.
+target_include_directories(llama PRIVATE ${llama_SOURCE_DIR}/ggml/include)
 
 add_library(bitwhisper_native SHARED native-lib.cpp)
 target_include_directories(bitwhisper_native PRIVATE
