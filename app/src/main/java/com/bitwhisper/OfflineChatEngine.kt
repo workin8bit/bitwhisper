@@ -5,7 +5,7 @@ package com.bitwhisper
  * plugged in without changing the voice, command, or accessibility layers.
  */
 interface OfflineChatEngine {
-    suspend fun respond(prompt: String, history: List<Pair<String, String>> = emptyList(), mode: ChatMode = ChatMode.GENERAL): String
+    fun respond(prompt: String, history: List<Pair<String, String>> = emptyList(), mode: ChatMode = ChatMode.GENERAL): String
 }
 
 class UnavailableChatEngine : OfflineChatEngine {

@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class VoiceService : Service() {
     private val commandRouter = CommandRouter()
     private val transcriber: TranscriptionEngine by lazy { LocalWhisperEngine(this) }
+    private val chatEngine: OfflineChatEngine by lazy { LocalChatEngine(this) }
     private val commandExecutor by lazy { CommandExecutor(this) }
     private val speaker by lazy { ResponseSpeaker(this) }
     private val history by lazy { ConversationStore(this) }
@@ -178,6 +179,13 @@ class VoiceService : Service() {
             history.add(text, response); speaker.speak(response)
             return IntentResult.Dictation(response)
         }
+        if (isConversationalQuestion(text)) {
+            val response = chatEngine.respond(text, emptyList(), ChatMode.GENERAL).trim()
+            val safeResponse = response.ifBlank { "Aku belum bisa menjawab itu sekarang." }
+            history.add(text, safeResponse)
+            speaker.speak(safeResponse)
+            return IntentResult.Dictation(safeResponse)
+        }
         val plan = planner.plan(text)
         if (plan.size > 1) {
             val response = "Saya menyiapkan ${plan.size} langkah untuk perintah ini."
@@ -203,6 +211,12 @@ class VoiceService : Service() {
         history.add(text, response)
         speaker.speak(response)
         return result
+    }
+
+    private fun isConversationalQuestion(text: String): Boolean {
+        val value = text.trim().lowercase()
+        val questionWords = listOf("apa ", "siapa ", "kenapa ", "bagaimana ", "kapan ", "dimana ", "di mana ", "jelaskan ", "ceritakan ", "bisakah ", "bolehkah ")
+        return value.endsWith("?") || questionWords.any { value.startsWith(it) } || value in setOf("halo", "hai", "kamu siapa", "apa kabar")
     }
 
     private fun executeConfirmedUi(command: UiCommand): String {
