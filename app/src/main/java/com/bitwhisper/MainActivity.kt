@@ -11,6 +11,8 @@ import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
     private lateinit var content: FrameLayout
@@ -20,7 +22,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.WHITE) }
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
+        window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.WHITE); clipToPadding = false }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, bars.top, view.paddingRight, bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
         val header = LinearLayout(this).apply { setPadding(28, 28, 28, 16); gravity = Gravity.CENTER_VERTICAL }
         header.addView(TextView(this).apply { text = "BitWhisper"; textSize = 24f; setTextColor(Color.BLACK) }, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(button("⚙ Settings") { showSettings() })
